@@ -1,7 +1,7 @@
 // ChmFile.cpp: implementation of the CChmFile class.
 //
 //////////////////////////////////////////////////////////////////////
-
+#include "stdafx.h"
 #include "cmpeeks.h"
 #include "Lattice.h"
 #include "ChmFile.h"
@@ -35,7 +35,7 @@ BOOL CChmFile::ReadChmFile(LPCTSTR lpszPathName)
 	ASSERT(pStgRoot!= NULL);
 
 	BOOL ret=TRUE;
-	char szStreamName[100] = "Raw_data";
+	wchar_t szStreamName[100] = _T("Raw_data");
 
     try {
 
@@ -62,7 +62,7 @@ BOOL CChmFile::ReadChmFile(LPCTSTR lpszPathName)
 
 // read time
 		pStream = NULL;
-		strcpy(szStreamName, "Time");
+		wcscpy_s(szStreamName, _T("Time"));
 		szStreamName[31] = '\0';
 		if( pStgRoot->OpenStream(T2COLE(szStreamName), NULL,
 								STGM_READ | STGM_SHARE_EXCLUSIVE,
@@ -94,7 +94,7 @@ BOOL CChmFile::ReadChmFile(LPCTSTR lpszPathName)
 
 		peeks.SetData( m_fData);
 		pStream = NULL;
-		strcpy(szStreamName, "Table");
+		wcscpy_s(szStreamName, _T("Table"));
 		if(pStgRoot->OpenStream(T2COLE(szStreamName), NULL,
 							STGM_READ | STGM_SHARE_EXCLUSIVE,
 							0, &pStream) != S_OK)
@@ -242,10 +242,10 @@ for( it=peeks.begin(); it!=peeks.end(); it++)  {
 	out+="   ";
 
 	CString area_str; 
-	area_str.Format("%.3f",it->GetArea());//площадь
+	area_str.Format(_T("%.3f"),it->GetArea());//площадь
 
 	out+=area_str;
-	out+="\r\n";
+	out+=_T("\r\n");
 	}
 
 	TRACE( out);

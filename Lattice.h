@@ -10,6 +10,7 @@
 #endif // _MSC_VER > 1000
 
 #include "afxtempl.h"
+#include "stdafx.h"
 #include <math.h>
 #define LATTICE_T float
 

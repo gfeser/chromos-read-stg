@@ -2,6 +2,7 @@
 //
 
 //m_fData - оригинальный набор точек, m_buf - вспомогательный
+#include "stdafx.h"
 #include "Cmpeeks.h"
 cmpeek::cmpeek()
 { 
@@ -116,12 +117,6 @@ void cmpeek::SetProperties( const CLattice &data)
 //	m_area=fabs(m_area); //remember!!! неправильно считаются вложеные пики
 }
 
-void cmpeek::format(LPTSTR str)
-{
-    _stprintf(str, "%f, %f, %f\n", m_time, m_height, m_area);
-
-}
-
 
 void cmpeek::Serialize(CArchive &ar, int ver, int number)
 {
@@ -231,7 +226,7 @@ void CPeeksTable::Read(CFile &file, int stream_size /*used for old style*/)
 	} else num = stream_size/sizeof(cmpeek::PEEK_BUFF);
 
 	resize(num);
-	for( int i=0; i<size(); i++)  {
+	for ( unsigned int i = 0; i<size(); i++)  {
 		at(i).Serialize( ar, ver, i);
 	}
 	
@@ -240,7 +235,7 @@ void CPeeksTable::Read(CFile &file, int stream_size /*used for old style*/)
 
 	ar.Close();
 
-    for( i = 0; i < size(); i++) {
+    for( unsigned int i = 0; i < size(); i++) {
 		int right=at(i).GetRight();
 		if( right>=0 && right<size()) at(right).SetLeft(i);
 		else at(i).SetRight(-1);
@@ -278,7 +273,7 @@ void CPeeksTable::Save(CFile &file)
 	ar<<SIGNATURE1<<SIGNATURE2<<version<<size();
 
 
-	for( int i=0; i<size(); i++)  {
+	for (unsigned int i = 0; i<size(); i++)  {
 		at(i).Serialize( ar, version);
 	}
 
@@ -300,8 +295,10 @@ void CPeeksTable::UpdatePeeks()
 {
 	ASSERT( m_fData!=NULL);
 
+	unsigned int i;
+
 	// поиск цепочки пиков и установка одной базовой линии
-	for ( int i = 0; i < size(); i++)  {
+	for ( i = 0; i < size(); i++)  {
 		if( at(i).GetRight() < 0 || at(i).GetLeft()>=0) continue;  // not start of chain
 		int last=at(i).GetRight(), j=last;
 		while( (j=at(j).GetRight()) >= 0)  last=j;
@@ -319,7 +316,7 @@ void CPeeksTable::UpdatePeeks()
 	// вычитание площадей наездников из площади основного пика
 	for ( i = 0; i < size(); i++) {		
 		double front=at(i).GetFront(), back=at(i).GetBack();
-		for ( int j=0; j < size(); j++) {
+		for (unsigned int j = 0; j < size(); j++) {
 			if( i==j) continue;
 			double front1=at(j).GetFront(), back1=at(j).GetBack();
 			if( front1>=front && back1<=back)  at(i).SubsArea( at(j).GetArea());
@@ -329,14 +326,15 @@ void CPeeksTable::UpdatePeeks()
 
 void CPeeksTable::UpdateLinks()
 {
-	for( int i=0; i<size(); i++)  {
+	unsigned int i;
+	for( i=0; i<size(); i++)  {
 		int left=at(i).GetLeft(), right=at(i).GetRight();
 
 		// stucked peek exists and was shifted, let's seek it
 		bool badleft = (left>=0) && (left>=size() || !at(left).IsFound(left)),
 			badright = (right>=0) && (right>=size() || !at(right).IsFound(right));
 		if( badleft	|| badright)  {
-			for( int j=0; j<size(); j++)	{
+			for (unsigned int j = 0; j<size(); j++)	{
 				if(j==i) continue;
 				if( badleft && at(j).IsFound(left))  {
 					at(i).SetLeft(j);  badleft=false;	// left is valid now
@@ -352,34 +350,7 @@ void CPeeksTable::UpdateLinks()
 	for( i=0; i<size(); i++)  at(i).SetNumber(i);
 }
 
-void CPeeksTable::DeletePeek(int n, bool UpdatePeeks/*=true*/, bool RealDel/*=false*/)
-{
-	iterator ptodel = begin()+n;
-	int left = ptodel->GetLeft(), right = ptodel->GetRight();
-	iterator pleft = NULL, pright = NULL;
-
-	if( left>=0)  pleft = begin() +	left;  //левый от текущего пик (неразделенный)
-	if( right>=0) pright = begin() + right;//правый
-
-	if( pleft!=NULL && pright != NULL)  
-	{// если есть и правый и левый
-//		if( ptodel->GetFront() > ptodel->GetBack())  {//если конец больше начала
-			if (!RealDel) pleft->SetBack( pright->GetFront()); // присоединяется к правому
-//		} else {
-//			if (!RealDel) pright->SetFront( pleft->GetBack());// к левому
-//		}
-	} else {
-		if( pleft != NULL && RealDel != false)  pleft->SetBack( ptodel->GetBack());
-		if( pright != NULL && RealDel != false) pright->SetFront( ptodel->GetFront());
-	}
-
-	if( pleft != NULL) pleft->SetRight(right); 
-	if( pright != NULL) pright->SetLeft(left);
-
-    erase( ptodel);
-	UpdateLinks();
-	if (UpdatePeeks) this->UpdatePeeks();
-}                                              
+                                       
 
 bool CPeeksTable::AddPeek(double f, double b, bool Reorganize, int type )
 {
@@ -536,7 +507,7 @@ BOOL  find_group=FALSE;
 int    start_number=0;
 int    stop_number=0;
 
-for( int i=0; i<size();i++)  {
+for (unsigned int i = 0; i<size(); i++)  {
 	cmpeek &peek = at(i);
 /*	if( peek.IsRider() ) {
 		TRACE("\nПик наездник %d",i+1);
@@ -554,7 +525,7 @@ for( int i=0; i<size();i++)  {
 		else { // была группа а теперь нет 
 		// основное 
 			TRACE("\n  -= Первичная группа =-");
-			CheckAndMarkGroup( start_number, stop_number );
+			//CheckAndMarkGroup( start_number, stop_number );
 			find_group=FALSE;
 			start_number=i;
 			}
@@ -568,191 +539,12 @@ for( int i=0; i<size();i++)  {
 
 if(find_group) {// последний пик был в группе - эту группу тоже добавим
 	TRACE("\n  -= Первичная группа =-");
-	CheckAndMarkGroup( start_number, stop_number );
+	//CheckAndMarkGroup( start_number, stop_number );
 	}
 
 }
 
-void CPeeksTable::CheckAndMarkGroup(int start_number, int stop_number)
-{
-int i,j;
 
-TRACE("\nПоступление на разбор группы %d..%d",start_number+1,stop_number+1);
-
-if(start_number==stop_number) { // это один пик
-	//at(start_number).m_rider=cmpeek::PT_Normal;
-	TRACE("\n\nОбработка одиночного пика %d\n",start_number+1);
-
-	return;
-	}
-
-double dt=m_fData->GetDt();
-double t0=m_fData->GetT0();
-
-
-
-// пробуем расширить базовую линию у всей группы
-int left_baza =(at(start_number).GetFront()-t0)/dt;
-int right_baza=(at(stop_number).GetBack()-t0)/dt;
-
-cmpeek& peek1=at(start_number);
-cmpeek& peek2=at(stop_number);
-
-ExpansionPeek(left_baza, right_baza);
-double l_hight=(m_fData->GetData())[left_baza];
-double r_hight=(m_fData->GetData())[right_baza];
-double k=(r_hight-l_hight)/(right_baza-left_baza);
-double b=l_hight-k*left_baza;
-
-TRACE("  Расширение группы %d-%d до %f-%f",start_number+1,stop_number+1,left_baza*dt+t0,right_baza*dt+t0);
-
-int start_subgroup=start_number;
-//int stop_subgroup=0;
-
-
-BOOL global_good_flag=TRUE;
-
-for(i=start_number; i<stop_number; i++) {
-	//проходим по всем пикам из группы и ищем пересечение с базовой линией между текущим и следующим
-
-		int j_start=(at(i).GetTime()-t0)/dt; // от вершины этого
-		int j_stop=(at(i+1).GetTime()-t0)/dt; // до вершины следующего
-
-		int good_flag=TRUE;
-
-		for( j=j_start; j<=j_stop; j++) {
-//			double sign=(m_fData->GetData())[j];
-//			double baza=k*j+b;
-			if( (m_fData->GetData())[j]< k*j+b ) { 
-				good_flag=FALSE; 
-				global_good_flag=FALSE; 
-				break; 
-				}
-			}
-
-		if(!good_flag) { // есть пересечение
-			TRACE("\n+пересечение после %d - первую часть в рекурсию",i+1);
-			CheckAndMarkGroup(start_subgroup, i); // рекурсия
-			TRACE("\n-возврат из рекурсиии первой группы %d-%d",start_subgroup+1,i+1);
-			
-			TRACE("\n+было пересечение перед %d - вторую часть в рекурсию",i+2);
-			CheckAndMarkGroup(i+1, stop_number); // рекурсия
-			TRACE("\n-возврат из рекурсиии - второй группы %d-%d",i+2,stop_number+1);
-			start_subgroup=i+1;
-
-			break;
-			}
-	}
-
-if(!global_good_flag) { // было пересечение
-	// остаток тоже в рекурсию
-	TRACE("\n                пересечение было");
-//	CheckAndMarkGroup(start_subgroup, stop_number); 
-	}
-else { // пересечений небыло вовсе у всей группы
-
-	TRACE("\n\nПересечений не было Обработка группы %d-%d\n",start_number+1,stop_number+1);
-
-	// найдём первый и последний пик в группе, но не наездник
-	int first_in_group=-1;
-	int last_in_group=-1;
-	for(i=start_number; i<=stop_number; i++) {
-		if( !at(i).IsRider() ) {
-			last_in_group=i;
-			if(first_in_group==-1 ) 
-				first_in_group=i;
-			}
-		}
-	if( first_in_group<0 || first_in_group==last_in_group ) {
-		// если все наездники или в группе всего один пик
-		TRACE("\nВ этой группе только наездники либо всего один пик в группе");
-		return;
-		}
-
-	// у первого пика в группе ставим ссылку в -1 и правим левый край (уширяем)
-//	at(first_in_group).SetLeft(-1);
-	at(first_in_group).SetFront(left_baza*dt+t0);
-	at(first_in_group).m_rider|=cmpeek::PT_Group;
-	// у последнего пика в группе ставим ссылку в -1 и правим правый край (уширяем)
-//	at(last_in_group).SetRight(-1);
-	at(last_in_group).SetBack(right_baza*dt+t0);
-
-	for(i=start_number; i<=stop_number; i++) {
-		
-		if(at(i).IsRider()) {
-			at(i).SetLeft(-1);
-			at(i).SetRight(-1);
-			continue;
-			}
-		//проходим по группе создаём перекрёстные ссылки
-
-		// найдём индексы пика слева и справа (но не наездников)
-		int pred=-1;
-		int next=-1;
-		if( i>first_in_group) 
-			for( int k=i-1; k>=first_in_group; k--)
-				if( !at(k).IsRider() ) {
-					pred=k;
-					break;
-					}
-		if( i<last_in_group) 
-			for( int k=i+1; k<=last_in_group; k++)
-				if( !at(k).IsRider() ) {
-					next=k;
-					break;
-					}
-
-		at(i).SetLeft(pred);
-		at(i).SetRight(next);
-		if(pred!=-1) {
-			at(pred).SetRight(i);
-			}
-		if(next!=-1) {
-			at(next).SetLeft(i);
-			// заодно подгоним правую границу пика под минимум прогиба
-
-			// если это мелкий пик внутри следующего (это наездник на переднем склоне)
-			if( at(i).GetFront()>at(next).GetFront() ) 
-				at(next).SetFront(at(i).GetBack()); // подтянем начало следующего пика
-			// если это мелкий пик внутри следующего (это наездник на заднем склоне)
-			else if(at(i).GetBack()>at(next).GetBack())
-				at(i).SetBack(at(next).GetFront()); // подтянем конец этого пика
-			
-			// обычная обработка подгоним правую границу пика под минимум прогиба
-			else {
-		
-				int j_start=(at(i).GetTime()-t0)/dt; // от времени выхода этого
-				int j_stop=(at(next).GetTime()-t0)/dt; // до времени выхода следующего
-				// нужно, конечно использовать максисум на вершине, поскольку время выхода
-				// и максимум не одно и то же у пиков с "косой" базовой линией
-				// но в этом случае (при отсеве первых двух случаев) работает и так
-
-				float min=FLT_MAX;
-				int   j_min=0;
-
-				for( j=j_start; j<=j_stop; j++) 
-					if( (m_fData->GetData())[j]<min ) { min=(m_fData->GetData())[j]; j_min=j; }
-
-				double min_time=j_min*dt+t0;
-
-				at(i).  SetBack(min_time);
-				at(next).SetFront(min_time);
-				}
-			}
-		}
-	// проходим ещё раз и выкусываем наездники
-/*	for(i=start_number; i<=stop_number; i++) {
-		if( at(i).IsRider() ) {
-			TRACE("\nОтсев наездника %d",i);
-			if(at(i).GetLeft()!=-1)  at(at(i).GetLeft()).SetRight(-1);
-			if(at(i).GetRight()!=-1) at(at(i).GetRight()).SetLeft(-1);
-			at(i).SetLeft(-1);
-			at(i).SetRight(-1);
-			}
-		}
-*/
-	}
-}
 
 
 BOOL CPeeksTable::IsPossibleAutomartOnEvent(double time1,double time2) {
@@ -786,139 +578,7 @@ return TRUE;
 
 
 
-float CPeeksTable::ExpansionPeek(int& i_left, int& i_right)
-{
-// расширяя от 1 выборки до минимальной ширины находим максимальную площадь, 
-//	чтобы не проскочить узкие пики и не остановиться на шумах
-int width_halve=m_peekThresh/(2*m_fData->GetDt());
-int width=width_halve*2;
 
-int data_len=m_fData->GetSize();
-float dt=m_fData->GetDt();
-float t0=m_fData->GetT0();
-
-int max_width=m_minWidth/dt; //m_minWidth==максимальная ширина :)
-
-float s_max=-FLT_MAX;
-int   p_max=0;
-float s_next=0;
-
-int  center=(i_left+i_right)/2;
-
-//int  left_point   = center-1;
-//int  right_point  = center+1;
-int  left_point   = i_left;
-int  right_point  = i_right;
-int  left_best_i  = left_point;
-int  right_best_i = right_point;
-
-
-	BOOL left_stop_counter =0;
-	BOOL right_stop_counter=0;
-
-	s_max=CalcSimplePeekArea(i_left,i_right);
-	s_max=fabs(s_max);
-
-	BOOL run_flag=TRUE;
-	while(run_flag) {
-
-	run_flag=FALSE;
-
-	left_point=left_best_i;
-	right_point=right_best_i;
-
-	int wplus=width/2;
-//		int wplus=(right_point-left_point)*0.10;  // 10%
-
-	int w_left=wplus;
-	if( left_point < wplus ) w_left=left_point;
-	int w_right=wplus;
-	if( data_len-right_point < wplus ) w_right=data_len-right_point;
-
-	for( int ileft=0; ileft<w_left; ileft++ ) {
-// надо бы, да долго
-		if( !IsPossibleAutomartOnEvent( (left_point-ileft)*dt+t0,(left_point-ileft)*dt+t0 ) ) // не запрещена ли там разметка
-			break;
-
-		if(right_best_i-left_point+ileft > max_width ) // очень большая ширина, отбрасываем устанавливая площадь =0
-			return 0;
-
-		s_next=CalcSimplePeekArea(left_point-ileft,right_best_i);
-//		s_next=fabs(s_next);
-
-		if( s_next>s_max ) {
-			run_flag=TRUE;
-			left_best_i=left_point-ileft;
-			s_max=s_next;
-			}
-		}
-	for( int iright=0; iright<w_right; iright++ ) {
-		if( !IsPossibleAutomartOnEvent( (right_point+iright)*dt+t0,(right_point+iright)*dt+t0 ) ) // не запрещена ли там разметка
-			break;
-
-		if(right_point+iright-left_point > max_width ) // очень большая ширина, отбрасываем устанавливая площадь =0
-			return 0;
-
-		s_next=CalcSimplePeekArea(left_best_i,right_point+iright);
-//		s_next=fabs(s_next);
-		if( s_next>s_max ) {
-			run_flag=TRUE;
-			right_best_i=right_point+iright;
-			s_max=s_next;
-			}
-		}
-
-
-
-
-
-
-
-	
-/*		while(left_stop_counter<width_halve || right_stop_counter<width_halve) {
-		// уширяем влево
-		if( left_point>1 ) {
-			s_next=CalcSimplePeekArea(left_point-1,right_best_i);
-			TRACE("\nAutoPeek: NEXT_l left=%d right=%d snext=%f",left_point-1,right_best_i,s_next);
-			if( s_next<s_max ) 
-				left_stop_counter++;
-			else {
-				s_max=s_next;
-				left_best_i=left_point-1;
-				left_stop_counter =0;
-				right_stop_counter =0;
-				}
-			left_point-=1;
-			}
-		else
-			left_stop_counter+=width_halve;
-
-		// уширяем вправо
-		if( right_point<data_len-2 ) {
-			s_next=CalcSimplePeekArea(left_best_i,right_point+1);
-			TRACE("\nAutoPeek: NEXT_r left=%d right=%d snext=%f",left_best_i,right_point+1,s_next);
-			if( s_next<s_max ) 
-				right_stop_counter++;
-			else {
-				s_max=s_next;
-				right_best_i=right_point+1;
-				left_stop_counter =0;
-				right_stop_counter =0;
-				}
-			right_point+=1;
-			}
-		else
-			right_stop_counter+=width_halve;
-		}
-*/
-
-	}
-//TRACE("\nAutoPeek: --- expand --- left=%d right=%d snext=%f",left_best_i,right_best_i,s_max );
-
-i_left=left_best_i;
-i_right=right_best_i;
-return s_max;
-}
 
 float CPeeksTable::CalcSimplePeekArea(int i_left, int i_right )
 {
@@ -1092,7 +752,7 @@ const CPeeksTable& CPeeksTable::operator=( const CPeeksTable &table1)
 
 BOOL CPeeksTable::IsDopParamExist()
 {
-	for( int i=0; i<size(); i++) {
+	for (unsigned int i = 0; i<size(); i++) {
 		if( at(i).IsDopParamExist() ) return TRUE;
 	}
 	return FALSE;
@@ -1100,7 +760,7 @@ BOOL CPeeksTable::IsDopParamExist()
 
 int CPeeksTable::FindPeek( LPCTSTR str)
 {
-	for( int i=0; i<size(); i++) {
+	for (unsigned int i = 0; i<size(); i++) {
 		const CString &name = at(i).GetComment();
 		if( !name.IsEmpty() && name.CollateNoCase(str) == 0)
 			return i;
@@ -1120,7 +780,7 @@ void CPeeksTable::CorrectTime(double k_corr, double t0)
 int CPeeksTable::Found(int posp)
 {
 	double posd=posp*m_fData->GetDt()+m_fData->GetT0();
-	for(int i=0; i<size();i++)  
+	for (unsigned int i = 0; i<size(); i++)
 	{
 		const cmpeek &peek = at(i);
 		if ( (peek.GetFront()<posd) && (peek.GetBack()>posd) ) return i;
@@ -1142,7 +802,7 @@ double CPeeksTable::GetMaxHeight()
 
 void CPeeksTable::KorrectMark()
 {
-	for( int i=0; i<size(); i++)  {
+	for (unsigned int i = 0; i<size(); i++)  {
 		const cmpeek &peek = at(i);
 
 	}
@@ -1249,20 +909,6 @@ void cmpeek::DopParamList::SetParam(CString &name, CString &value)
 
 }
 
-void cmpeek::DopParamList::ClearParam(CString &name)
-{
-	// no iterator is used, erase() make the referense invalid, and use of iterator maked impossible 
-	
-	int sz=size();
-
-	for( int i=sz-1; i>=0; i--) {
-
-		if(at(i).name==name) {
-			erase(&at(i));
-			// may be more param's with same name
-			}		
-		}
-}
 
 CString cmpeek::DopParamList::GetParam(CString &name)
 {
@@ -1343,7 +989,7 @@ void cmpeek::DopParamList::Serialize(CArchive &ar, int ver)
 		else {
 
 			if( ver==3 ) {  // сразу проверяем на совпадения имён и пустые имена
-				for( int i=0; i<sz; i++ ) {
+				for (unsigned int i = 0; i<sz; i++) {
 
 					TwinsDopParam tdp;
 					ar>>tdp.name; 
@@ -1367,13 +1013,6 @@ void cmpeek::DopParamList::Serialize(CArchive &ar, int ver)
 }
 
 
-
-double cmpeek::GetRetentionIndex()
-{
-CString sval=m_DopParams.GetParam(CString(DOP_PAR_INDEXES));
-double val=atof(sval);
-return val; 
-}
 
 
 

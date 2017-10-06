@@ -29,13 +29,8 @@
 #include <vector>
 #include <map>
 
-//#include <XTToolkitPro.h>		// Xtreme Toolkit support
-
-#import "msxml6.dll"
-using namespace MSXML2;
 
 #include "Lattice.h"
-//#include "WEvents.h"
 
 #define DOP_PAR_INDEXES "Индекс"
 
@@ -149,7 +144,6 @@ public:
 	void    ClearDopParam(CString &name) { m_DopParams.ClearParam(name); }
 	BOOL    IsDopParamExist() { return m_DopParams.IsDopParamExist(); }
 
-	void format(LPTSTR str);
 
 //	const LPCTSTR GetComment() const { return (LPCTSTR)m_comment; }
 	const CString& GetComment() const { return m_comment; }
